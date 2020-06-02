@@ -726,6 +726,7 @@ export class YText extends AbstractType {
      * @type {Array<function():void>?}
      */
     this._pending = string !== undefined ? [() => this.insert(0, string)] : []
+    this._permitEmptyParagraph = false
   }
 
   /**
@@ -735,6 +736,17 @@ export class YText extends AbstractType {
    */
   get length () {
     return this._length
+  }
+
+  /**
+   * Permit empty paragraph at the end of the content when applyDelta.
+   *
+   * @param {boolean} permit
+   *
+   * @public
+   */
+  set permitEmptyParagraph (permit) {
+    this._permitEmptyParagraph = permit
   }
 
   /**
@@ -752,7 +764,9 @@ export class YText extends AbstractType {
   }
 
   _copy () {
-    return new YText()
+    const yText = new YText()
+    yText._permitEmptyParagraph = this._permitEmptyParagraph
+    return yText
   }
 
   /**
@@ -859,7 +873,7 @@ export class YText extends AbstractType {
             // there is a newline at the end of the content.
             // If we omit this step, clients will see a different number of
             // paragraphs, but nothing bad will happen.
-            const ins = (typeof op.insert === 'string' && i === delta.length - 1 && pos.right === null && op.insert.slice(-1) === '\n') ? op.insert.slice(0, -1) : op.insert
+            const ins = (!this._permitEmptyParagraph && typeof op.insert === 'string' && i === delta.length - 1 && pos.right === null && op.insert.slice(-1) === '\n') ? op.insert.slice(0, -1) : op.insert
             if (typeof ins !== 'string' || ins.length > 0) {
               pos = insertText(transaction, this, pos.left, pos.right, currentAttributes, ins, op.attributes || {})
             }
